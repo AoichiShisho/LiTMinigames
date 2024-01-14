@@ -6,11 +6,17 @@ using UnityEngine.UI;
 public class DeviceDetector : MonoBehaviour
 {
     public List<Dropdown> playerDeviceDropdowns;
+    public List<Image> playerDeviceImage;
     private List<InputDevice> devices;
     private Dictionary<int, int> playerDeviceSelections = new Dictionary<int, int>();
 
+    public Sprite gamepadSprite;
+    public Sprite keyboardSprite;
+
     void Start()
     {
+        DontDestroyOnLoad(gameObject);
+
         devices = new List<InputDevice>();
         foreach (var device in InputSystem.devices) {
             if (device is Gamepad || device is Keyboard) {
@@ -19,6 +25,14 @@ public class DeviceDetector : MonoBehaviour
         }
         UpdateDeviceDropdowns();
         InputSystem.onDeviceChange += OnDeviceChanged;
+
+        for (int i = 0; i < playerDeviceDropdowns.Count; i++)
+        {
+            if (devices.Count > i)
+            {
+                UpdateDeviceImage(i, devices[i]);
+            }
+        }
     }
 
     public Dictionary<int, int> GetPlayerDeviceSelections() {
@@ -45,11 +59,12 @@ public class DeviceDetector : MonoBehaviour
         }
     }
 
+    // デバイスの選択状態を初期化する
     private void InitializeDeviceSelections()
     {
         playerDeviceSelections.Clear();
         for (int i = 0; i < playerDeviceDropdowns.Count; i++) {
-            Debug.Log($"Player {i + 1} selected deviceId: {PlayerPrefs.GetInt($"PlayerDeviceID_{i}")}");
+            // Debug.Log($"Player {i + 1} selected deviceId: {PlayerPrefs.GetInt($"PlayerDeviceID_{i}")}");
             playerDeviceSelections.Add(i, devices[i].deviceId);
         }
     }
@@ -85,11 +100,32 @@ public class DeviceDetector : MonoBehaviour
         InputDevice selectedDevice = devices[deviceIndex];
         playerDeviceSelections[playerIndex] = selectedDevice.deviceId;
 
+        UpdateDeviceImage(playerIndex, selectedDevice);
+
         PlayerPrefs.SetInt($"PlayerDeviceID_{playerIndex}", selectedDevice.deviceId);
         PlayerPrefs.Save();
 
         Debug.Log($"Player {playerIndex + 1} selected device: {selectedDevice.displayName}");
-        Debug.Log($"Player {playerIndex + 1} selected deviceId: {selectedDevice.deviceId}");
+        // Debug.Log($"Player {playerIndex + 1} selected deviceId: {selectedDevice.deviceId}");
+        // Debug.Log($"Player {playerIndex + 1} selected deviceId in playerDeviceSelections: {playerDeviceSelections[playerIndex]}");
+    }
+
+    private void UpdateDeviceImage(int playerIndex, InputDevice selectedDevice)
+    {
+        if (selectedDevice is Gamepad) {
+            playerDeviceImage[playerIndex].sprite = gamepadSprite;
+        } else if (selectedDevice is Keyboard) {
+            playerDeviceImage[playerIndex].sprite = keyboardSprite;
+        } else {
+            // ログで画像が選択できなかった旨を出力
+            Debug.LogError($"Device {selectedDevice.displayName} is not supported.");
+        }
+
+        // if (playerDeviceImages.Count > playerIndex)
+        // {
+        //     playerDeviceImages[playerIndex].sprite = deviceSprite;
+        //     playerDeviceImages[playerIndex].enabled = (deviceSprite != null);
+        // }
     }
 
     private void UpdateDropdownOptions(Dropdown dropdown, int playerIndex)
