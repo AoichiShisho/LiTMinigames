@@ -11,6 +11,8 @@ public class DeviceDetector : MonoBehaviour
 
     void Start()
     {
+        DontDestroyOnLoad(gameObject);
+
         devices = new List<InputDevice>();
         foreach (var device in InputSystem.devices) {
             if (device is Gamepad || device is Keyboard) {
@@ -45,6 +47,7 @@ public class DeviceDetector : MonoBehaviour
         }
     }
 
+    // デバイスの選択状態を初期化する
     private void InitializeDeviceSelections()
     {
         playerDeviceSelections.Clear();
@@ -90,6 +93,7 @@ public class DeviceDetector : MonoBehaviour
 
         Debug.Log($"Player {playerIndex + 1} selected device: {selectedDevice.displayName}");
         Debug.Log($"Player {playerIndex + 1} selected deviceId: {selectedDevice.deviceId}");
+        Debug.Log($"Player {playerIndex + 1} selected deviceId in playerDeviceSelections: {playerDeviceSelections[playerIndex]}");
     }
 
     private void UpdateDropdownOptions(Dropdown dropdown, int playerIndex)
