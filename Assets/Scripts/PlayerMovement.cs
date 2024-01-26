@@ -1,126 +1,75 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public InputActionAsset inputActions;
-    private InputAction moveAction;
-    private DeviceDetector deviceDetector;
-    private MovementInputs movementInputs;
+    public int playerIndex;
+
     private Vector2 movementValue;
-
-    [SerializeField]
-    private int deviceId;
-    [SerializeField]
-    private string deviceName;
-
-    public int playerId;
-
-    [SerializeField]
-    private float speed = 5f;
+    public float speed = 5.0f; // プレイヤーの移動速度
     private Rigidbody rb;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        // TagからDeviceDetectorオブジェクトを探し、playerDeviceSelectionsから自分のデバイスIDを取得する
-        deviceDetector = FindObjectOfType<DeviceDetector>();
-        deviceId = deviceDetector.GetPlayerDeviceSelections()[playerId];
+    }
 
-        ManageDevice();
-        CheckDeviceDetector();
-
-        InitializeMovementInputs();
+    void Update()
+    {
+        int deviceInt = PlayerPrefs.GetInt($"PlayerDeviceID_{playerIndex}", -1);
+        if (deviceInt == -1) Debug.LogError($"PlayerDeviceID_{playerIndex} is not set.");
+        var device = InputSystem.GetDeviceById(deviceInt);
         
-        // deviceIdとオブジェクト名をログで出力
-        Debug.Log($"PlayerId: {playerId} Device ID: {deviceId} Device name: {deviceName}");
-
+        // デバイスがGamepadだった場合
+        if (device is Gamepad gamepad) {
+            GamepadMovement(gamepad);
+        } else if (device is Keyboard keyboard) {
+            // 本来はキーボードの動きを書く
+            KeyboardMovement(keyboard);
+        }        
     }
 
-    private void InitializeMovementInputs()
+    void GamepadMovement(Gamepad gamepad)
     {
-        movementInputs = new MovementInputs();
+        Vector2 movementValue = gamepad.leftStick.ReadValue(); // 左スティックの値を読み取る
+        Vector3 movement = new Vector3(movementValue.x, 0f, movementValue.y) * speed * Time.deltaTime;
+        rb.MovePosition(rb.position + movement);
 
-        var moveAction = movementInputs.Player.Move;
-        SetActionBinding(moveAction, deviceId);
-        moveAction.started += OnMove;
-        moveAction.performed += OnMove;
-        moveAction.canceled += OnMove;
-
-        var runAction = movementInputs.Player.Run;
-        SetActionBinding(runAction, deviceId);
-        runAction.performed += OnRun;
-        runAction.canceled += OnRun;
-
-        movementInputs.Enable();
-    }
-
-    private void OnDestroy()
-    {
-        // 自身でインスタンス化したActionクラスはIDisposableを実装しているので、
-        // シーン遷移時には必ずDispose()を呼ぶ必要がある
-        movementInputs.Disable();
-    }
-
-    private void OnMove(InputAction.CallbackContext context)
-    {
-        movementValue = context.ReadValue<Vector2>();
-    }
-
-    private void OnRun(InputAction.CallbackContext context)
-    {
-        // 押されている間はspeedを2倍にする
-        if (context.performed) {
+        if (gamepad.buttonSouth.isPressed)  {
             speed = 10f;
-        }
-        // 離されたら元に戻す
-        if (context.canceled) {
+        } else {
             speed = 5f;
         }
     }
 
-    void Update()
-    {   
-        // ManageDevice();
+    void KeyboardMovement(Keyboard keyboard)
+    {
+        // WASDキーの入力を基に移動方向を計算
+        float moveX = 0f;
+        float moveZ = 0f;
 
-        Vector3 movement = new Vector3(movementValue.x, 0f, movementValue.y) * speed * Time.deltaTime;
-        rb.MovePosition(rb.position + movement);
-    }
+        if (keyboard.wKey.isPressed) {
+            moveZ = 1f;
+        }
+        if (keyboard.sKey.isPressed) {
+            moveZ = -1f;
+        }
+        if (keyboard.aKey.isPressed) {
+            moveX = -1f;
+        }
+        if (keyboard.dKey.isPressed) {
+            moveX = 1f;
+        }
 
-    void ManageDevice() {
-        // プレイヤーのデバイスIDを取得（更新されていれば変更されるようにする）
-        deviceId = deviceDetector.GetPlayerDeviceSelections()[playerId];
-
-        var device = InputSystem.GetDeviceById(deviceId);
-        
-        if (device != null) {
-            deviceName = device.name;
+        // Shiftキーが押されている場合は速度を上げる
+        if (keyboard.shiftKey.isPressed) {
+            speed = 10f;
         } else {
-            Debug.LogError("Player " + playerId + ", Device not found with ID: " + deviceId);
+            speed = 5f;
         }
-    }
 
-    private void SetActionBinding(InputAction action, int deviceId)
-    {
-        var device = InputSystem.GetDeviceById(deviceId);
-        if (device != null) {
-            string layoutName = device.layout;
-            action.bindingMask = InputBinding.MaskByGroup(layoutName);
-            action.Enable();
-        }
-    }
-
-    void CheckDeviceDetector()
-    {
-        if (deviceDetector == null || deviceId == -1) {
-            if (deviceDetector == null)
-                Debug.LogError("DeviceDetector component not found on " + name);
-            if (deviceId == -1)
-                Debug.LogError("Player " + playerId + ", Device ID not set on " + name);
-            // ここでポーズ画面を表示してデバイスを選択できるようにする
-        }
+        // 計算された移動方向と速度を使用してプレイヤーを移動させる
+        Vector3 movement = new Vector3(moveX, 0f, moveZ) * speed * Time.deltaTime;
+        rb.MovePosition(rb.position + movement);
     }
 }

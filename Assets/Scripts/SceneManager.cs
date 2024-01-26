@@ -20,6 +20,6 @@ public class SceneManager : MonoBehaviour
     // SampleScene2へ遷移する
     public void OnClickSampleScene2Button()
     {
-        UnityEngine.SceneManagement.SceneManager.LoadScene("SampleScene3");
+        UnityEngine.SceneManagement.SceneManager.LoadScene("SampleScene2");
     }
 }

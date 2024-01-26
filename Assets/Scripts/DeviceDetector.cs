@@ -38,11 +38,6 @@ public class DeviceDetector : MonoBehaviour
         return playerDeviceSelections;
     }
 
-    void OnDestroy()
-    {
-        InputSystem.onDeviceChange -= OnDeviceChanged;
-    }
-
     // デバイスが追加または削除されるたびに呼ばれる
     private void OnDeviceChanged(InputDevice device, InputDeviceChange change)
     {
@@ -63,7 +58,6 @@ public class DeviceDetector : MonoBehaviour
     {
         playerDeviceSelections.Clear();
         for (int i = 0; i < playerDeviceDropdowns.Count; i++) {
-            // Debug.Log($"Player {i + 1} selected deviceId: {PlayerPrefs.GetInt($"PlayerDeviceID_{i}")}");
             playerDeviceSelections.Add(i, devices[i].deviceId);
         }
     }
@@ -74,6 +68,7 @@ public class DeviceDetector : MonoBehaviour
             playerDeviceDropdowns[i].onValueChanged.RemoveAllListeners();
 
             int localIndex = i;
+            // どれかのDropdownでデバイスで違う選択肢に変更されたら
             playerDeviceDropdowns[i].onValueChanged.AddListener((int deviceIndex) => {
                 OnDeviceSelected(localIndex, deviceIndex);
             });
@@ -94,6 +89,7 @@ public class DeviceDetector : MonoBehaviour
         }
     }
 
+    // Dropdownでデバイスが選択されたら
     public void OnDeviceSelected(int playerIndex, int deviceIndex)
     {
         InputDevice selectedDevice = devices[deviceIndex];
@@ -105,8 +101,6 @@ public class DeviceDetector : MonoBehaviour
         PlayerPrefs.Save();
 
         Debug.Log($"Player {playerIndex + 1} selected device: {selectedDevice.displayName}");
-        // Debug.Log($"Player {playerIndex + 1} selected deviceId: {selectedDevice.deviceId}");
-        // Debug.Log($"Player {playerIndex + 1} selected deviceId in playerDeviceSelections: {playerDeviceSelections[playerIndex]}");
     }
 
     private void UpdateDeviceImage(int playerIndex, InputDevice selectedDevice)
@@ -119,12 +113,6 @@ public class DeviceDetector : MonoBehaviour
             // ログで画像が選択できなかった旨を出力
             Debug.LogError($"Device {selectedDevice.displayName} is not supported.");
         }
-
-        // if (playerDeviceImages.Count > playerIndex)
-        // {
-        //     playerDeviceImages[playerIndex].sprite = deviceSprite;
-        //     playerDeviceImages[playerIndex].enabled = (deviceSprite != null);
-        // }
     }
 
     private void UpdateDropdownOptions(Dropdown dropdown, int playerIndex)
@@ -141,15 +129,5 @@ public class DeviceDetector : MonoBehaviour
         }
 
         dropdown.AddOptions(options);
-    }
-
-    public bool HasDeviceSelectionDuplicates() {
-        HashSet<int> uniqueDeviceIds = new HashSet<int>();
-        foreach (var deviceSelection in playerDeviceSelections.Values) {
-            if (deviceSelection != -1 && !uniqueDeviceIds.Add(deviceSelection)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
