@@ -28,8 +28,7 @@ public class DeviceDetector : MonoBehaviour
 
         for (int i = 0; i < playerDeviceDropdowns.Count; i++)
         {
-            if (devices.Count > i)
-            {
+            if (devices.Count > i) {
                 UpdateDeviceImage(i, devices[i]);
             }
         }

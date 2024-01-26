@@ -43,11 +43,18 @@ public class PlayerMovement : MonoBehaviour
     private void InitializeMovementInputs()
     {
         movementInputs = new MovementInputs();
-        movementInputs.Player.Move.started += OnMove;
-        movementInputs.Player.Move.performed += OnMove;
-        movementInputs.Player.Move.canceled += OnMove;
-        movementInputs.Player.Run.performed += OnRun;
-        movementInputs.Player.Run.canceled += OnRun;
+
+        var moveAction = movementInputs.Player.Move;
+        SetActionBinding(moveAction, deviceId);
+        moveAction.started += OnMove;
+        moveAction.performed += OnMove;
+        moveAction.canceled += OnMove;
+
+        var runAction = movementInputs.Player.Run;
+        SetActionBinding(runAction, deviceId);
+        runAction.performed += OnRun;
+        runAction.canceled += OnRun;
+
         movementInputs.Enable();
     }
 
@@ -96,6 +103,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void SetActionBinding(InputAction action, int deviceId)
+    {
+        var device = InputSystem.GetDeviceById(deviceId);
+        if (device != null) {
+            string layoutName = device.layout;
+            action.bindingMask = InputBinding.MaskByGroup(layoutName);
+            action.Enable();
+        }
+    }
+
     void CheckDeviceDetector()
     {
         if (deviceDetector == null || deviceId == -1) {
@@ -103,7 +120,7 @@ public class PlayerMovement : MonoBehaviour
                 Debug.LogError("DeviceDetector component not found on " + name);
             if (deviceId == -1)
                 Debug.LogError("Player " + playerId + ", Device ID not set on " + name);
-            UnityEngine.SceneManagement.SceneManager.LoadScene("SampleScene");
+            // ここでポーズ画面を表示してデバイスを選択できるようにする
         }
     }
 }
